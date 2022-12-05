@@ -53,7 +53,10 @@ parts:
     # no real value in writing a port to core22 for this.
     plugin: nil
     source: https://github.com/godotengine/godot.git
-    source-branch: master # Change this for stable releases/Godot 3 - or use source-tag
+    source-tag: '3.5.1-stable' # Change this for stable releases/Godot 3 - or use source-tag
+    source-depth: 1
+    build-environment:
+      - DISPLAY: 0
     build-packages:
       - build-essential
       - libasound2-dev
@@ -68,26 +71,33 @@ parts:
       - libxrandr-dev
       - pkg-config
       - scons
+      - mono-complete
+      - nuget
+      - dotnet6
     # Handles scons build+installation accounting for the differences in Godot 3
     # and Godot 4 automatically.
     override-build: |
       craftctl default
-      if [ `python3 -c "import version; print(f'{version.major}', end='')"` -eq 3 ]
-      then
-        scons platform=x11 target=release_debug use_lto=yes
-      else
-        scons platform=linuxbsd production=yes
-      fi
+      # Build temporary binary
+      scons p=server tools=yes module_mono_enabled=yes mono_glue=no
+      # Generate glue sources
+      bin/godot_server.x11.tools.64.mono --headless --generate-mono-glue modules/mono/glue
+      
+      ### Build binaries normally
+      # Editor
+      scons p=x11 target=release_debug tools=yes module_mono_enabled=yes
+      # Export templates
+      scons p=x11 target=release_debug tools=no module_mono_enabled=yes
+      scons p=x11 target=release tools=no module_mono_enabled=yes
 
       cp icon.svg $CRAFT_PART_INSTALL/icon.svg
       cp -r bin $CRAFT_PART_INSTALL/bin
       cp version.py $CRAFT_PART_INSTALL/version.py
     organize:
-      bin/godot.*: bin/godot
       icon.svg: meta/gui/godot.svg
     stage:
       - version.py
-      - bin/godot
+      - bin
       - meta/gui/godot.svg
     # We're only staging `version.py` for our metainfo
     prime:
@@ -244,11 +254,12 @@ environment:
   HOME: $SNAP_USER_COMMON
   # Export Vulkan ICD filename paths
   VK_ICD_FILENAMES: /var/lib/snapd/lib/vulkan/icd.d/nvidia_icd.json:$SNAP/usr/share/vulkan/icd.d/radeon_icd.x86_64.json:$SNAP/usr/share/vulkan/icd.d/intel_icd.x86_64.json
+  LD_LIBRARY_PATH: $SNAP/bin${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 apps:
   godot:
     command-chain: [snap/command-chain/alsa-launch]
-    command: bin/godot
+    command: bin/godot.x11.opt.64.mono
     common-id: org.godotengine.Godot
     plugs:
       - alsa
