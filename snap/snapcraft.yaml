@@ -115,6 +115,8 @@ parts:
       - libxinerama1
       - libxrandr2
       - libgl1-mesa-dri
+      - libmonosgen-2.0-1
+      - libxext6
 
   # This stage just pulls in our `README.md`` for purposes
   # of the `metainfo` stage. We unprime it because there's
@@ -254,12 +256,12 @@ environment:
   HOME: $SNAP_USER_COMMON
   # Export Vulkan ICD filename paths
   VK_ICD_FILENAMES: /var/lib/snapd/lib/vulkan/icd.d/nvidia_icd.json:$SNAP/usr/share/vulkan/icd.d/radeon_icd.x86_64.json:$SNAP/usr/share/vulkan/icd.d/intel_icd.x86_64.json
-  LD_LIBRARY_PATH: $SNAP/bin${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+  LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/dri:$SNAP/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 apps:
   godot:
     command-chain: [snap/command-chain/alsa-launch]
-    command: bin/godot.x11.opt.64.mono
+    command: bin/godot.x11.opt.tools.64.mono
     common-id: org.godotengine.Godot
     plugs:
       - alsa
