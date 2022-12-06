@@ -73,7 +73,6 @@ parts:
       - scons
       - mono-complete
       - nuget
-      - dotnet6
     # Handles scons build+installation accounting for the differences in Godot 3
     # and Godot 4 automatically.
     override-build: |
@@ -117,6 +116,9 @@ parts:
       - libgl1-mesa-dri
       - libmonosgen-2.0-1
       - libxext6
+      - mono-complete
+      - nuget
+      - dotnet6
 
   # This stage just pulls in our `README.md`` for purposes
   # of the `metainfo` stage. We unprime it because there's
@@ -251,6 +253,8 @@ layout:
     symlink: $SNAP/usr/lib/x86_64-linux-gnu/libxcb.so.1.1.0
   /etc/ld.so.cache:
     bind-file: $SNAP_DATA/etc/ld.so.cache
+  /usr/lib/x86_64-linux-gnu/dri:
+    bind: $SNAP/usr/lib/x86_64-linux-gnu/dri
 
 environment:
   HOME: $SNAP_USER_COMMON
