@@ -225,6 +225,13 @@ parts:
       - usr/bin/vkcube
       - usr/bin/vkcubepp
       - usr/bin/lspci
+      
+  cleanup:
+    after: [godot]
+    plugin: nil
+    override-prime: |
+      cd $CRAFT_PRIME
+      rm bin/godot_server.x11.tools.64.mono
 
 layout:
   ### Audio
