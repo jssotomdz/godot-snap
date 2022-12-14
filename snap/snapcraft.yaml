@@ -53,7 +53,7 @@ parts:
     # no real value in writing a port to core22 for this.
     plugin: nil
     source: https://github.com/godotengine/godot.git
-    source-tag: '3.5.1-stable' # Change this for stable releases/Godot 3 - or use source-tag
+    #source-tag: '3.5.1-stable' # Change this for stable releases/Godot 3 - or use source-tag
     source-depth: 1
     build-environment:
       - DISPLAY: 0
@@ -73,21 +73,23 @@ parts:
       - scons
       - mono-complete
       - nuget
+      - openssl
+      - dotnet6
+    #build-snaps:
+    #  - dotnet-sdk
     # Handles scons build+installation accounting for the differences in Godot 3
     # and Godot 4 automatically.
     override-build: |
-      craftctl default
-      # Build temporary binary
-      scons p=server tools=yes module_mono_enabled=yes mono_glue=no
+      # Build editor binary
+      scons p=linux tools=yes module_mono_enabled=yes
       # Generate glue sources
-      bin/godot_server.x11.tools.64.mono --headless --generate-mono-glue modules/mono/glue
-      
-      ### Build binaries normally
-      # Editor
-      scons p=x11 target=release_debug tools=yes module_mono_enabled=yes
+      bin/godot.linuxbsd.editor.x86_64.mono --headless --generate-mono-glue modules/mono/glue
+      # Build the C# solutions
+      alias msbuild="dotnet msbuild"
+      ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir ./bin
       # Export templates
-      scons p=x11 target=release_debug tools=no module_mono_enabled=yes
-      scons p=x11 target=release tools=no module_mono_enabled=yes
+      scons p=linux target=template_debug module_mono_enabled=yes
+      scons p=linux target=template_release module_mono_enabled=yes
 
       cp icon.svg $CRAFT_PART_INSTALL/icon.svg
       cp -r bin $CRAFT_PART_INSTALL/bin
@@ -119,6 +121,11 @@ parts:
       - mono-complete
       - nuget
       - dotnet6
+      - libncurses5
+    stage-snaps:
+      - dotnet-sdk
+    prime:
+      - -lib/*/libc.so*
 
   # This stage just pulls in our `README.md`` for purposes
   # of the `metainfo` stage. We unprime it because there's
@@ -225,13 +232,6 @@ parts:
       - usr/bin/vkcube
       - usr/bin/vkcubepp
       - usr/bin/lspci
-      
-  cleanup:
-    after: [godot]
-    plugin: nil
-    override-prime: |
-      cd $CRAFT_PRIME
-      rm bin/godot_server.x11.tools.64.mono
 
 layout:
   ### Audio
@@ -272,7 +272,7 @@ environment:
 apps:
   godot:
     command-chain: [snap/command-chain/alsa-launch]
-    command: bin/godot.x11.opt.tools.64.mono
+    command: bin/godot.linuxbsd.editor.x86_64.mono
     common-id: org.godotengine.Godot
     plugs:
       - alsa
